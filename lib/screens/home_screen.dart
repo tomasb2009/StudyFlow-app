@@ -74,6 +74,16 @@ class _HomeScreenState extends State<HomeScreen> {
     guardarTareas();
   }
 
+  void actualizarTarea(Tarea tareaActualizada) {
+    final index = tareas.indexWhere((t) => t.id == tareaActualizada.id);
+    if (index != -1) {
+      setState(() {
+        tareas[index] = tareaActualizada;
+      });
+      guardarTareas();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -242,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: TareasSemanales(
                           tareas: tareas,
                           onCompletarTarea: completarTarea,
+                          onTareaEditada: actualizarTarea, // Agrega esta línea
                         ),
                       ),
                       const SizedBox(height: 16),

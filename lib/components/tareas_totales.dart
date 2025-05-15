@@ -6,12 +6,14 @@ class TareasTotales extends StatefulWidget {
   final List<Tarea> tareas;
   final Function(int) onCompletarTarea;
   final Function(String) onEliminarTarea;
+  final Function(Tarea)? onTareaEditada; // Agrega esta línea
 
   const TareasTotales({
     super.key,
     required this.tareas,
     required this.onCompletarTarea,
     required this.onEliminarTarea,
+    required this.onTareaEditada,
   });
 
   @override
@@ -27,28 +29,35 @@ class _TareasTotalesState extends State<TareasTotales> {
     showDialog(
       context: context,
       builder: (BuildContext ctx) {
+        final bool completado = tarea.completado;
+
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.blue),
-              SizedBox(width: 8),
+              Icon(
+                completado ? Icons.check_circle : Icons.check_circle,
+                color: completado ? Colors.red : Colors.blue,
+              ),
+              const SizedBox(width: 8),
               Text(
-                'Completar tarea',
+                completado ? 'Desmarcar tarea' : 'Completar tarea',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: completado ? Colors.red : Colors.blue,
                 ),
               ),
             ],
           ),
-          content: const Text(
-            '¿Estás seguro de que quieres marcar esta tarea como completada?',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          content: Text(
+            completado
+                ? '¿Estás seguro de que quieres desmarcar esta tarea como completada?'
+                : '¿Estás seguro de que quieres marcar esta tarea como completada?',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           ),
           actionsPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -67,7 +76,7 @@ class _TareasTotalesState extends State<TareasTotales> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: completado ? Colors.red : Colors.blue,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -113,6 +122,7 @@ class _TareasTotalesState extends State<TareasTotales> {
                 isCompleting: _completingTaskId == tarea.id,
                 onDismissed: (id) => widget.onEliminarTarea(id),
                 onCheck: () => _confirmarCompletar(context, index),
+                onTareaEditada: widget.onTareaEditada, // Pasa el callback
               );
             }),
           ),

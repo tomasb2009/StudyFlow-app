@@ -8,6 +8,7 @@ class TareaCard2 extends StatefulWidget {
   final Function(String) onDismissed;
   final Function() onCheck;
   final bool isCompleting;
+  final Function(Tarea)? onTareaEditada;
 
   const TareaCard2({
     super.key,
@@ -15,6 +16,7 @@ class TareaCard2 extends StatefulWidget {
     required this.onDismissed,
     required this.onCheck,
     this.isCompleting = false,
+    this.onTareaEditada,
   });
 
   @override
@@ -101,7 +103,11 @@ class _TareaCard2State extends State<TareaCard2> {
       ),
       child: GestureDetector(
         onTap: () {
-          DetalleTareaModal.mostrar(context, widget.tarea);
+          DetalleTareaModal.mostrar(
+            context,
+            widget.tarea,
+            onTareaEditada: widget.onTareaEditada, // Pasa el callback
+          );
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
@@ -130,8 +136,9 @@ class _TareaCard2State extends State<TareaCard2> {
                     BlendMode.srcIn,
                   ),
                 ),
-                onPressed: widget.onCheck,
+                onPressed: widget.isCompleting ? null : widget.onCheck,
               ),
+
               const SizedBox(width: 4),
               Expanded(
                 child: Column(

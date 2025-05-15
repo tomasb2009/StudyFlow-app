@@ -8,6 +8,7 @@ class TareaCard extends StatefulWidget {
   final BorderRadius borderRadius;
   final Function() onCheck;
   final bool isCompleting;
+  final Function(Tarea)? onTareaEditada;
 
   const TareaCard({
     super.key,
@@ -15,6 +16,7 @@ class TareaCard extends StatefulWidget {
     required this.borderRadius,
     required this.onCheck,
     this.isCompleting = false,
+    this.onTareaEditada,
   });
 
   @override
@@ -25,7 +27,12 @@ class _TareaCardState extends State<TareaCard> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => DetalleTareaModal.mostrar(context, widget.tarea),
+      onTap:
+          () => DetalleTareaModal.mostrar(
+            context,
+            widget.tarea,
+            onTareaEditada: widget.onTareaEditada,
+          ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.only(bottom: 1),

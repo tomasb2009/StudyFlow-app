@@ -13,6 +13,9 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final double itemWidth = width / 5;
+
     return Container(
       height: 65,
       decoration: const BoxDecoration(
@@ -20,43 +23,63 @@ class BottomNavBar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
-            blurRadius: 4,
+            blurRadius: 6,
             offset: Offset(0, -2),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Stack(
         children: [
-          _NavItem(
-            iconAsset: 'assets/svg/home_icon.svg',
-            index: 0,
-            currentIndex: currentIndex,
-            onTap: onTap,
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            bottom: 8,
+            left: itemWidth * currentIndex + itemWidth * 0.3,
+            child: Container(
+              width: itemWidth * 0.4,
+              height: 3,
+              decoration: BoxDecoration(
+                color: Colors.blueAccent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           ),
-          _NavItem(
-            iconAsset: 'assets/svg/calendar_icon.svg',
-            index: 1,
-            currentIndex: currentIndex,
-            onTap: onTap,
-          ),
-          _NavItem(
-            iconAsset: 'assets/svg/clock_icon.svg',
-            index: 2,
-            currentIndex: currentIndex,
-            onTap: onTap,
-          ),
-          _NavItem(
-            iconAsset: 'assets/svg/book_icon.svg',
-            index: 3,
-            currentIndex: currentIndex,
-            onTap: onTap,
-          ),
-          _NavItem(
-            iconAsset: 'assets/svg/gemini_icon.svg',
-            index: 4,
-            currentIndex: currentIndex,
-            onTap: onTap,
+
+          // Íconos con tamaño dinámico
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                iconAsset: 'assets/svg/home_icon.svg',
+                index: 0,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                iconAsset: 'assets/svg/calendar_icon.svg',
+                index: 1,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                iconAsset: 'assets/svg/clock_icon.svg',
+                index: 2,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                iconAsset: 'assets/svg/book_icon.svg',
+                index: 3,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                iconAsset: 'assets/svg/gemini_icon.svg',
+                index: 4,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+            ],
           ),
         ],
       ),
@@ -81,25 +104,25 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double selectedSize = 36;
+    final double defaultSize = 32;
+
     return GestureDetector(
       onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.translucent,
       child: SizedBox(
-        width: 60,
+        width: MediaQuery.of(context).size.width / 5,
         height: 65,
         child: Center(
-          child: AnimatedSwitcher(
+          child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) {
-              return ScaleTransition(scale: animation, child: child);
-            },
+            curve: Curves.easeInOut,
+            width: isSelected ? selectedSize : defaultSize,
+            height: isSelected ? selectedSize : defaultSize,
             child: SvgPicture.asset(
               iconAsset,
-              key: ValueKey<bool>(isSelected),
-              width: isSelected ? 40 : 34,
-              height: isSelected ? 40 : 34,
               colorFilter: ColorFilter.mode(
-                isSelected ? Colors.blue : Colors.grey,
+                isSelected ? Colors.blueAccent : Colors.grey.shade400,
                 BlendMode.srcIn,
               ),
             ),

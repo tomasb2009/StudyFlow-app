@@ -5,11 +5,13 @@ import 'package:studyflow_app/models/tarea.dart';
 class TareasSemanales extends StatefulWidget {
   final List<Tarea> tareas;
   final Function(int) onCompletarTarea;
+  final Function(Tarea)? onTareaEditada;
 
   const TareasSemanales({
     super.key,
     required this.tareas,
     required this.onCompletarTarea,
+    this.onTareaEditada,
   });
 
   @override
@@ -205,6 +207,7 @@ class _TareasSemanalesState extends State<TareasSemanales> {
                         taskId: tarea.id,
                       );
                     },
+                    onTareaEditada: widget.onTareaEditada,
                   );
                 }),
               ),

@@ -1,15 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:studyflow_app/components/editar_tarea_modal.dart';
 import '../models/tarea.dart';
 
 class DetalleTareaModal extends StatelessWidget {
   final Tarea tarea;
+  final Function(Tarea)? onTareaEditada;
 
-  const DetalleTareaModal({super.key, required this.tarea});
+  const DetalleTareaModal({
+    super.key,
+    required this.tarea,
+    required this.onTareaEditada,
+  });
 
-  static void mostrar(BuildContext context, Tarea tarea) {
+  static void mostrar(
+    BuildContext context,
+    Tarea tarea, {
+    Function(Tarea)? onTareaEditada, // Agrega este parámetro
+  }) {
     showDialog(
       context: context,
-      builder: (context) => DetalleTareaModal(tarea: tarea),
+      builder:
+          (context) => DetalleTareaModal(
+            tarea: tarea,
+            onTareaEditada: onTareaEditada, // Pasa el callback
+          ),
     );
   }
 
@@ -71,7 +85,7 @@ class DetalleTareaModal extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Text(
                     tarea.tipo,
                     style: const TextStyle(
@@ -82,28 +96,47 @@ class DetalleTareaModal extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 36,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
-                  label: const Text(
-                    'Cerrar',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.grey),
+                    tooltip: 'Editar tarea',
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      EditarTareaModal.mostrar(
+                        context,
+                        tarea,
+                        onTareaEditada: onTareaEditada, // Pasa el callback
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.close,
                       color: Colors.white,
+                      size: 24,
+                    ),
+                    label: const Text(
+                      'Cerrar',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                ),
+                ],
               ),
             ],
           ),

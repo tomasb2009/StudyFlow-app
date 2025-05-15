@@ -20,7 +20,7 @@ class _TasksScreenState extends State<TasksScreen> {
   List<Tarea> tareas = [];
   String? categoriaSeleccionada;
   String periodoSeleccionado = 'Semana';
-  String ordenSeleccionado = 'Más Próxima'; // Nuevo estado para el orden
+  String ordenSeleccionado = 'Más Próxima';
 
   @override
   void initState() {
@@ -59,7 +59,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
     if (indiceReal != -1) {
       setState(() {
-        tareas[indiceReal].completado = true;
+        tareas[indiceReal].completado = !tareas[indiceReal].completado;
       });
       guardarTareas();
     }
@@ -78,6 +78,16 @@ class _TasksScreenState extends State<TasksScreen> {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  void actualizarTarea(Tarea tareaActualizada) {
+    final index = tareas.indexWhere((t) => t.id == tareaActualizada.id);
+    if (index != -1) {
+      setState(() {
+        tareas[index] = tareaActualizada;
+      });
+      guardarTareas();
+    }
   }
 
   List<Tarea> get tareasFiltradas {
@@ -253,6 +263,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         tareas: tareasFiltradas,
                         onCompletarTarea: completarTarea,
                         onEliminarTarea: eliminarTarea,
+                        onTareaEditada: actualizarTarea, // Agrega esta línea
                       ),
                     ],
                   ),
