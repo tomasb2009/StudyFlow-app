@@ -155,64 +155,88 @@ class _TareasSemanalesState extends State<TareasSemanales> {
 
         ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 350),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              child: Column(
-                children: List.generate(tareasFiltradas.length, (index) {
-                  final tarea = tareasFiltradas[index];
-                  final isFirst = index == 0;
-                  final isLast = index == tareasFiltradas.length - 1;
+          child:
+              tareasFiltradas.isEmpty
+                  ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "🎉 ¡Sin tareas esta semana! 🎉",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  )
+                  : SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
+                      child: Column(
+                        children: List.generate(tareasFiltradas.length, (
+                          index,
+                        ) {
+                          final tarea = tareasFiltradas[index];
+                          final isFirst = index == 0;
+                          final isLast = index == tareasFiltradas.length - 1;
 
-                  BorderRadius borderRadius;
-                  if (isFirst && isLast) {
-                    borderRadius = BorderRadius.circular(22);
-                  } else if (isFirst) {
-                    borderRadius = const BorderRadius.vertical(
-                      top: Radius.circular(22),
-                    );
-                  } else if (isLast) {
-                    borderRadius = const BorderRadius.vertical(
-                      bottom: Radius.circular(22),
-                    );
-                  } else {
-                    borderRadius = BorderRadius.zero;
-                  }
+                          BorderRadius borderRadius;
+                          if (isFirst && isLast) {
+                            borderRadius = BorderRadius.circular(22);
+                          } else if (isFirst) {
+                            borderRadius = const BorderRadius.vertical(
+                              top: Radius.circular(22),
+                            );
+                          } else if (isLast) {
+                            borderRadius = const BorderRadius.vertical(
+                              bottom: Radius.circular(22),
+                            );
+                          } else {
+                            borderRadius = BorderRadius.zero;
+                          }
 
-                  return TareaCard(
-                    tarea: tarea,
-                    borderRadius: borderRadius,
-                    isCompleting: _completingTaskId == tarea.id,
-                    onCheck: () {
-                      _confirmarAccion(
-                        context: context,
-                        titulo: 'Completar tarea',
-                        contenido:
-                            '¿Estás seguro de que quieres marcar esta tarea como completada?',
-                        onConfirmar: () {
-                          setState(() {
-                            _completingTaskId = tarea.id;
-                          });
+                          return TareaCard(
+                            tarea: tarea,
+                            borderRadius: borderRadius,
+                            isCompleting: _completingTaskId == tarea.id,
+                            onCheck: () {
+                              _confirmarAccion(
+                                context: context,
+                                titulo: 'Completar tarea',
+                                contenido:
+                                    '¿Estás seguro de que quieres marcar esta tarea como completada?',
+                                onConfirmar: () {
+                                  setState(() {
+                                    _completingTaskId = tarea.id;
+                                  });
 
-                          Future.delayed(const Duration(milliseconds: 750), () {
-                            final originalIndex = widget.tareas.indexOf(tarea);
-                            widget.onCompletarTarea(originalIndex);
-                            setState(() {
-                              _completingTaskId = null;
-                            });
-                          });
-                        },
-                        color: Colors.blue,
-                        icono: Icons.check_circle,
-                        taskId: tarea.id,
-                      );
-                    },
-                    onTareaEditada: widget.onTareaEditada,
-                  );
-                }),
-              ),
-            ),
-          ),
+                                  Future.delayed(
+                                    const Duration(milliseconds: 750),
+                                    () {
+                                      final originalIndex = widget.tareas
+                                          .indexOf(tarea);
+                                      widget.onCompletarTarea(originalIndex);
+                                      setState(() {
+                                        _completingTaskId = null;
+                                      });
+                                    },
+                                  );
+                                },
+                                color: Colors.blue,
+                                icono: Icons.check_circle,
+                                taskId: tarea.id,
+                              );
+                            },
+                            onTareaEditada: widget.onTareaEditada,
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
         ),
       ],
     );
