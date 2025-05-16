@@ -335,6 +335,9 @@ class _EditarTareaModalState extends State<EditarTareaModal>
                           offset: Offset(_tituloOffset.value, 0),
                           child: TextField(
                             controller: _tituloController,
+                            cursorColor: Colors.grey[700],
+                            enableInteractiveSelection: false,
+                            cursorRadius: Radius.circular(100),
                             style: const TextStyle(color: Colors.black),
                             maxLength: 22,
                             inputFormatters: [
@@ -375,14 +378,17 @@ class _EditarTareaModalState extends State<EditarTareaModal>
                     offset: Offset(_descripcionOffset.value, 0),
                     child: TextField(
                       controller: _descripcionController,
+                      cursorColor: Colors.grey[700],
+                      enableInteractiveSelection: false,
+                      cursorRadius: Radius.circular(100),
                       style: const TextStyle(color: Colors.black),
                       maxLines: 3,
-                      maxLength: 40,
-                      inputFormatters: [LengthLimitingTextInputFormatter(40)],
+                      maxLength: 100,
+                      inputFormatters: [LengthLimitingTextInputFormatter(100)],
                       decoration: InputDecoration(
                         hintText: "Agrega una descripción",
                         hintStyle: TextStyle(color: Colors.grey[500]),
-                        counterText: "$descripcionLength/40",
+                        counterText: "$descripcionLength/100",
                         filled: true,
                         fillColor: const Color(0xFFF4F4F4),
                         border: const OutlineInputBorder(

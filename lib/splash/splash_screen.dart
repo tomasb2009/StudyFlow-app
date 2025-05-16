@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _timer = Timer.periodic(const Duration(milliseconds: 80), (timer) {
       setState(() {
         if (progress < 0.7) {
-          progress += 0.015; // velocidad inicio
+          progress += 0.02; // velocidad inicio
         } else if (!paused) {
           paused = true;
           _timer.cancel();

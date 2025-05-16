@@ -304,6 +304,9 @@ class _FormTareaState extends State<FormTarea> with TickerProviderStateMixin {
                         offset: Offset(_tituloOffset.value, 0),
                         child: TextField(
                           controller: tituloController,
+                          cursorColor: Colors.grey[700],
+                          enableInteractiveSelection: false,
+                          cursorRadius: Radius.circular(100),
                           maxLength: 22,
                           inputFormatters: [
                             LengthLimitingTextInputFormatter(22),
@@ -335,12 +338,15 @@ class _FormTareaState extends State<FormTarea> with TickerProviderStateMixin {
                   offset: Offset(_descripcionOffset.value, 0),
                   child: TextField(
                     controller: descController,
+                    cursorColor: Colors.grey[700],
+                    enableInteractiveSelection: false,
+                    cursorRadius: Radius.circular(100),
                     maxLines: 4,
-                    maxLength: 40,
-                    inputFormatters: [LengthLimitingTextInputFormatter(40)],
+                    maxLength: 100,
+                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
                     decoration: InputDecoration(
                       hintText: "Agrega una descripción",
-                      counterText: "$descripcionLength/40",
+                      counterText: "$descripcionLength/100",
                       filled: true,
                       fillColor: const Color(0xFFF4F4F4),
                       border: const OutlineInputBorder(
