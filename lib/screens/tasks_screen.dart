@@ -173,7 +173,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Text(
-                        "Study Flow",
+                        "Tareas",
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
