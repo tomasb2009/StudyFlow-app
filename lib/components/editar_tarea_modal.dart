@@ -149,21 +149,27 @@ class _EditarTareaModalState extends State<EditarTareaModal>
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final DateTime hoy = DateTime.now();
+    final DateTime initial =
+        (selectedDate != null && selectedDate!.isAfter(hoy))
+            ? selectedDate!
+            : hoy;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initial,
+      firstDate: hoy,
       lastDate: DateTime(2026),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color.fromARGB(255, 6, 135, 240),
-              onSurface: const Color.fromARGB(190, 0, 0, 0),
+            colorScheme: const ColorScheme.light(
+              primary: Color.fromARGB(255, 6, 135, 240),
+              onSurface: Color.fromARGB(190, 0, 0, 0),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                textStyle: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             dialogTheme: DialogTheme(
@@ -177,6 +183,7 @@ class _EditarTareaModalState extends State<EditarTareaModal>
         );
       },
     );
+
     if (picked != null) {
       setState(() {
         selectedDate = picked;

@@ -60,6 +60,12 @@ class _TasksScreenState extends State<TasksScreen> {
     if (indiceReal != -1) {
       setState(() {
         tareas[indiceReal].completado = !tareas[indiceReal].completado;
+        // Reordenar: las tareas completadas primero
+        tareas.sort((a, b) {
+          if (a.completado && !b.completado) return -1;
+          if (!a.completado && b.completado) return 1;
+          return 0;
+        });
       });
       guardarTareas();
     }
@@ -134,6 +140,14 @@ class _TasksScreenState extends State<TasksScreen> {
     });
 
     return tareasFiltradas;
+  }
+
+  List<Tarea> get tareasIncompletasVencidas {
+    final hoy = DateTime.now();
+    return tareas.where((tarea) {
+      final fechaTarea = _parsearFecha(tarea.fechaEntrega);
+      return !tarea.completado && fechaTarea.isBefore(hoy);
+    }).toList();
   }
 
   DateTime _parsearFecha(String fechaStr) {
@@ -261,9 +275,29 @@ class _TasksScreenState extends State<TasksScreen> {
                       const SizedBox(height: 16),
                       TareasTotales(
                         tareas: tareasFiltradas,
-                        onCompletarTarea: completarTarea,
+                        tareasIncompletas:
+                            periodoSeleccionado == 'Completado'
+                                ? tareasIncompletasVencidas
+                                : [],
+                        onCompletarTarea: (tarea) {
+                          final indexReal = tareas.indexWhere(
+                            (t) => t.id == tarea.id,
+                          );
+                          if (indexReal != -1) {
+                            setState(() {
+                              tareas[indexReal].completado =
+                                  !tareas[indexReal].completado;
+                              tareas.sort((a, b) {
+                                if (!a.completado && b.completado) return -1;
+                                if (a.completado && !b.completado) return 1;
+                                return 0;
+                              });
+                            });
+                            guardarTareas();
+                          }
+                        },
                         onEliminarTarea: eliminarTarea,
-                        onTareaEditada: actualizarTarea, // Agrega esta línea
+                        onTareaEditada: actualizarTarea,
                       ),
                     ],
                   ),

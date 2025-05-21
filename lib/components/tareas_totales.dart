@@ -4,9 +4,12 @@ import 'package:studyflow_app/models/tarea.dart';
 
 class TareasTotales extends StatefulWidget {
   final List<Tarea> tareas;
-  final Function(int) onCompletarTarea;
+  final List<Tarea> tareasIncompletas;
+
+  // Ahora onCompletarTarea recibe la tarea directamente
+  final Function(Tarea) onCompletarTarea;
   final Function(String) onEliminarTarea;
-  final Function(Tarea)? onTareaEditada; // Agrega esta línea
+  final Function(Tarea)? onTareaEditada;
 
   const TareasTotales({
     super.key,
@@ -14,6 +17,7 @@ class TareasTotales extends StatefulWidget {
     required this.onCompletarTarea,
     required this.onEliminarTarea,
     required this.onTareaEditada,
+    required this.tareasIncompletas,
   });
 
   @override
@@ -23,9 +27,7 @@ class TareasTotales extends StatefulWidget {
 class _TareasTotalesState extends State<TareasTotales> {
   String? _completingTaskId;
 
-  void _confirmarCompletar(BuildContext context, int index) {
-    final tarea = widget.tareas[index];
-
+  void _confirmarCompletar(BuildContext context, Tarea tarea) {
     showDialog(
       context: context,
       builder: (BuildContext ctx) {
@@ -88,7 +90,9 @@ class _TareasTotalesState extends State<TareasTotales> {
                 });
 
                 Future.delayed(const Duration(milliseconds: 750), () {
-                  widget.onCompletarTarea(index);
+                  widget.onCompletarTarea(
+                    tarea,
+                  ); // Ahora pasamos la tarea directamente
                   setState(() {
                     _completingTaskId = null;
                   });
@@ -108,23 +112,78 @@ class _TareasTotalesState extends State<TareasTotales> {
   @override
   Widget build(BuildContext context) {
     final alturaDisponible = MediaQuery.of(context).size.height - 406;
+
+    // Filtramos solo las tareas incompletas vencidas (fecha anterior a hoy)
+    final tareasIncompletasVencidas =
+        widget.tareasIncompletas.where((tarea) {
+          final hoy = DateTime.now();
+
+          // Parsear el string "dd/MM" sumando el año actual
+          final partes = tarea.fechaEntrega.split('/');
+          if (partes.length != 2) return false;
+
+          final dia = int.tryParse(partes[0]);
+          final mes = int.tryParse(partes[1]);
+          if (dia == null || mes == null) return false;
+
+          final fechaTarea = DateTime(hoy.year, mes, dia);
+          final fechaHoy = DateTime(hoy.year, hoy.month, hoy.day);
+
+          return fechaTarea.isBefore(fechaHoy);
+        }).toList();
+
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: alturaDisponible),
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
           child: Column(
-            children: List.generate(widget.tareas.length, (index) {
-              final tarea = widget.tareas[index];
-              return TareaCard2(
-                key: ValueKey(tarea.id),
-                tarea: tarea,
-                isCompleting: _completingTaskId == tarea.id,
-                onDismissed: (id) => widget.onEliminarTarea(id),
-                onCheck: () => _confirmarCompletar(context, index),
-                onTareaEditada: widget.onTareaEditada, // Pasa el callback
-              );
-            }),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...List.generate(widget.tareas.length, (index) {
+                final tarea = widget.tareas[index];
+                return TareaCard2(
+                  key: ValueKey(tarea.id),
+                  tarea: tarea,
+                  isCompleting: _completingTaskId == tarea.id,
+                  onDismissed: (id) => widget.onEliminarTarea(id),
+                  onCheck: () => _confirmarCompletar(context, tarea),
+                  onTareaEditada: widget.onTareaEditada,
+                );
+              }),
+              if (tareasIncompletasVencidas.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Container(height: 2, width: 40, color: Colors.black54),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Tareas Incompletas',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color.fromARGB(203, 0, 0, 0),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(height: 2, color: Colors.black54),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...tareasIncompletasVencidas.map((tarea) {
+                  return TareaCard2(
+                    key: ValueKey('incompleta_${tarea.id}'),
+                    tarea: tarea,
+                    isCompleting: false,
+                    onDismissed: (id) => widget.onEliminarTarea(id),
+                    onCheck: () => _confirmarCompletar(context, tarea),
+                    onTareaEditada: widget.onTareaEditada,
+                  );
+                }),
+              ],
+            ],
           ),
         ),
       ),
