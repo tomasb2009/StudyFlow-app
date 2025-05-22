@@ -155,19 +155,21 @@ class _TareasTotalesState extends State<TareasTotales> {
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    Container(height: 2, width: 40, color: Colors.black54),
+                    Expanded(
+                      child: Container(height: 1.3, color: Colors.black54),
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'Tareas Incompletas',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color.fromARGB(203, 0, 0, 0),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black54,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Container(height: 2, color: Colors.black54),
+                      child: Container(height: 1.3, color: Colors.black54),
                     ),
                   ],
                 ),
@@ -176,6 +178,7 @@ class _TareasTotalesState extends State<TareasTotales> {
                   return TareaCard2(
                     key: ValueKey('incompleta_${tarea.id}'),
                     tarea: tarea,
+                    color: const Color.fromARGB(150, 255, 0, 0),
                     isCompleting: false,
                     onDismissed: (id) => widget.onEliminarTarea(id),
                     onCheck: () => _confirmarCompletar(context, tarea),

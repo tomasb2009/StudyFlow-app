@@ -5,6 +5,7 @@ import 'detalle_tarea_modal.dart';
 
 class TareaCard2 extends StatefulWidget {
   final Tarea tarea;
+  final Color? color;
   final Function(String) onDismissed;
   final Function() onCheck;
   final bool isCompleting;
@@ -17,6 +18,7 @@ class TareaCard2 extends StatefulWidget {
     required this.onCheck,
     this.isCompleting = false,
     this.onTareaEditada,
+    this.color,
   });
 
   @override
@@ -154,16 +156,16 @@ class _TareaCard2State extends State<TareaCard2> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today,
                           size: 20,
-                          color: Colors.grey,
+                          color: widget.color ?? Colors.grey,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           widget.tarea.fechaEntrega.toString(),
-                          style: const TextStyle(
-                            color: Colors.grey,
+                          style: TextStyle(
+                            color: widget.color ?? Colors.grey,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
