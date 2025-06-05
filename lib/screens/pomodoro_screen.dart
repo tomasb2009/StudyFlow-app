@@ -155,19 +155,22 @@ class _PomodoroScreenState extends State<PomodoroScreen>
                       );
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildControlButton(
-                        icon: widget.isRunning ? Icons.pause : Icons.play_arrow,
+                        icon:
+                            widget.isRunning
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
                         color: Colors.lightBlue,
                         onPressed:
                             widget.isRunning ? widget.onPause : widget.onStart,
                       ),
-                      const SizedBox(width: 24),
+                      const SizedBox(width: 12),
                       _buildControlButton(
-                        icon: Icons.stop,
+                        icon: Icons.stop_rounded,
                         color: Colors.redAccent,
                         onPressed: widget.onReset,
                       ),
@@ -188,15 +191,17 @@ class _PomodoroScreenState extends State<PomodoroScreen>
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: 64,
-      height: 64,
+      padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F4),
+        color: Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
       ),
       child: IconButton(
-        icon: Icon(icon, color: color, size: 28),
+        icon: Icon(icon, color: color, size: 46),
         onPressed: onPressed,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
       ),
     );
   }
@@ -231,7 +236,7 @@ class _AnimatedCirclePainter extends CustomPainter {
             transform: GradientRotation(2 * pi * rotation),
             colors: const [
               Colors.lightBlueAccent,
-              Colors.blueAccent,
+              Colors.deepPurpleAccent,
               Colors.lightBlueAccent,
             ],
           ).createShader(Rect.fromCircle(center: center, radius: radius))
