@@ -32,7 +32,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _startTimer() async {
     if (_isRunning) return;
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (_secondsRemaining > 0) {
         setState(() {
           _secondsRemaining--;

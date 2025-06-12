@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:studyflow_app/splash/splash_screen.dart';
 
-void main() {
-  // Configuración de la barra de estado y la barra de navegación
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Configuración de la barra de estado y la barra de navegación
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -32,7 +32,6 @@ class MainApp extends StatelessWidget {
       color: Colors.white,
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
-
       supportedLocales: [Locale('es', 'ES')],
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,

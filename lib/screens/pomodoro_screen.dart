@@ -215,7 +215,7 @@ class _AnimatedCirclePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = 12.0;
+    final strokeWidth = 16.0;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width / 2) - strokeWidth / 2;
 
