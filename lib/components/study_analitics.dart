@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../models/pomodoro_stats.dart';
 
 class StudyAnalitics extends StatefulWidget {
@@ -175,7 +176,9 @@ class _BarChart extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Container(
-                height: maxHeight * (value / maxHours), // Usar 3h como máx.
+                height:
+                    maxHeight *
+                    (min(value, maxHours) / maxHours), // Limitar a 3h máximo
                 width: 26,
                 decoration: BoxDecoration(
                   color: const Color(0xFF5D9CEC),
