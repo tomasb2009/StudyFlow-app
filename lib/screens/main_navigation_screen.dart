@@ -51,7 +51,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     setState(() {
       _pomodoroServiceRunning = isServiceRunning;
-      
+
       // Si el servicio está corriendo, usar el remaining guardado
       // Si no está corriendo, usar la duración seleccionada
       if (isServiceRunning && savedRemaining != null) {

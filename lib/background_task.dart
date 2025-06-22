@@ -19,13 +19,16 @@ class PomodoroHandler extends TaskHandler {
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    print('🚀 Background task iniciado - Timestamp: ${timestamp.toIso8601String()}');
-    
+    print(
+      '🚀 Background task iniciado - Timestamp: ${timestamp.toIso8601String()}',
+    );
+
     final prefs = await SharedPreferences.getInstance();
     _remaining = prefs.getInt('remaining') ?? 25 * 60;
     _isRunning = prefs.getBool('isRunning') ?? false;
-    _selectedDuration = prefs.getInt('selected_duration') ?? 25; // Cargar duración seleccionada
-    
+    _selectedDuration =
+        prefs.getInt('selected_duration') ?? 25; // Cargar duración seleccionada
+
     // Cargar stats
     final statsJson = prefs.getString('pomodoro_stats');
     if (statsJson != null) {
@@ -34,8 +37,10 @@ class PomodoroHandler extends TaskHandler {
       _stats = PomodoroStats(dailySeconds: {});
     }
     _lastTick = _remaining;
-    
-    print('📊 Estado inicial cargado - Remaining: $_remaining, Running: $_isRunning, Duration: ${_selectedDuration}min');
+
+    print(
+      '📊 Estado inicial cargado - Remaining: $_remaining, Running: $_isRunning, Duration: ${_selectedDuration}min',
+    );
 
     _updateNotification();
     _sendStateToUI();
@@ -64,7 +69,7 @@ class PomodoroHandler extends TaskHandler {
     if (id == 'pause_resume') {
       _isRunning = !_isRunning;
       _saveState();
-      
+
       // Manejar el timer según el estado
       if (_isRunning) {
         if (!_timerActive) {
@@ -83,13 +88,18 @@ class PomodoroHandler extends TaskHandler {
     if (data is Map) {
       if (data['action'] == 'start') {
         // Iniciar el pomodoro con el estado recibido
-        print('🎯 Recibida acción START - Remaining: ${data['remaining']}, Running: ${data['isRunning']}');
+        print(
+          '🎯 Recibida acción START - Remaining: ${data['remaining']}, Running: ${data['isRunning']}',
+        );
         _remaining = data['remaining'] ?? 25 * 60;
         _isRunning = data['isRunning'] ?? true;
-        _selectedDuration = (_remaining / 60).round(); // Actualizar duración seleccionada
-        print('✅ Estado actualizado - Remaining: $_remaining, Running: $_isRunning, Duration: ${_selectedDuration}min');
+        _selectedDuration =
+            (_remaining / 60).round(); // Actualizar duración seleccionada
+        print(
+          '✅ Estado actualizado - Remaining: $_remaining, Running: $_isRunning, Duration: ${_selectedDuration}min',
+        );
         _saveState();
-        
+
         // Iniciar el timer solo si no está activo
         if (!_timerActive) {
           _startTimer();
@@ -100,7 +110,7 @@ class PomodoroHandler extends TaskHandler {
       } else if (data['action'] == 'pause') {
         _isRunning = !_isRunning;
         _saveState();
-        
+
         // Manejar el timer según el estado
         if (_isRunning) {
           if (!_timerActive) {
@@ -116,20 +126,25 @@ class PomodoroHandler extends TaskHandler {
         FlutterForegroundTask.stopService();
       } else if (data['action'] == 'updateTime') {
         _remaining = data['remaining'];
-        _selectedDuration = (_remaining / 60).round(); // Actualizar duración seleccionada
+        _selectedDuration =
+            (_remaining / 60).round(); // Actualizar duración seleccionada
         _updateNotification();
         _sendStateToUI();
         _saveState();
       } else if (data['action'] == 'reset') {
-        print('🔄 Recibida acción RESET - Deteniendo timer y reseteando estado');
+        print(
+          '🔄 Recibida acción RESET - Deteniendo timer y reseteando estado',
+        );
         _stopTimer();
-        
+
         // Usar la duración seleccionada actual sin cargar desde SharedPreferences
         // ya que ya la tenemos en memoria
         _remaining = _selectedDuration * 60;
         _isRunning = false;
-        
-        print('✅ Estado reseteado en background task - Remaining: $_remaining, Running: $_isRunning, Duration: ${_selectedDuration}min');
+
+        print(
+          '✅ Estado reseteado en background task - Remaining: $_remaining, Running: $_isRunning, Duration: ${_selectedDuration}min',
+        );
         _saveState();
         _sendStateToUI();
         _sendStatsToUI();
@@ -169,7 +184,7 @@ class PomodoroHandler extends TaskHandler {
   void _sendStateToUI() {
     // Actualizar la notificación automáticamente cuando se envía el estado
     _updateNotification();
-    
+
     FlutterForegroundTask.sendDataToMain({
       'remaining': _remaining,
       'isRunning': _isRunning,
@@ -180,7 +195,10 @@ class PomodoroHandler extends TaskHandler {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('remaining', _remaining);
     await prefs.setBool('isRunning', _isRunning);
-    await prefs.setInt('selected_duration', _selectedDuration); // Guardar duración seleccionada
+    await prefs.setInt(
+      'selected_duration',
+      _selectedDuration,
+    ); // Guardar duración seleccionada
   }
 
   String _formatTime(int seconds) {
@@ -191,7 +209,7 @@ class PomodoroHandler extends TaskHandler {
 
   void _startTimer() {
     if (_timerActive) return;
-    
+
     print('⏰ Iniciando timer interno');
     _timerActive = true;
     _lastTick = _remaining;
