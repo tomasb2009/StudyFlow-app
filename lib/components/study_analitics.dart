@@ -175,15 +175,31 @@ class _BarChart extends StatelessWidget {
           return Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Container(
-                height:
-                    maxHeight *
-                    (min(value, maxHours) / maxHours), // Limitar a 3h máximo
-                width: 26,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5D9CEC),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  // Barra de fondo (más clara)
+                  Container(
+                    height: maxHeight,
+                    width: 26,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5D9CEC).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  // Barra azul (valor actual)
+                  Container(
+                    height:
+                        maxHeight *
+                        (min(value, maxHours) /
+                            maxHours), // Limitar a 3h máximo
+                    width: 26,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5D9CEC),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

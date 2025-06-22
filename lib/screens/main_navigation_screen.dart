@@ -44,14 +44,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final prefs = await SharedPreferences.getInstance();
     final savedRemaining = prefs.getInt('remaining');
     final savedIsRunning = prefs.getBool('isRunning');
+    final savedDuration = prefs.getInt('selected_duration') ?? 25;
     final isServiceRunning = await FlutterForegroundTask.isRunningService;
 
     if (!mounted) return;
 
     setState(() {
-      if (savedRemaining != null) _pomodoroRemaining = savedRemaining;
-      if (savedIsRunning != null) _pomodoroIsRunning = savedIsRunning;
       _pomodoroServiceRunning = isServiceRunning;
+      
+      // Si el servicio está corriendo, usar el remaining guardado
+      // Si no está corriendo, usar la duración seleccionada
+      if (isServiceRunning && savedRemaining != null) {
+        _pomodoroRemaining = savedRemaining;
+        _pomodoroIsRunning = savedIsRunning ?? false;
+      } else {
+        // Servicio no activo, usar la duración seleccionada
+        _pomodoroRemaining = savedDuration * 60;
+        _pomodoroIsRunning = false;
+      }
     });
   }
 

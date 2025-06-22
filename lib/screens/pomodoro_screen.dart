@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../background_task.dart';
-import '../models/pomodoro_stats.dart';
 
 class PomodoroScreen extends StatefulWidget {
   final int initialRemaining;
@@ -31,7 +30,16 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   late int _remaining;
   late bool _isRunning;
   late bool _isServiceRunning;
-  PomodoroStats? _stats;
+
+  // Nuevas variables para manejar la duración seleccionada
+  int _selectedDuration = 25; // minutos
+  final List<int> _availableDurations = [25, 50, 90];
+
+  // Bandera para evitar conflictos durante el reset
+  bool _isResetting = false;
+
+  // Bandera para indicar si la duración se ha cargado
+  bool _durationLoaded = false;
 
   @override
   void initState() {
@@ -47,7 +55,23 @@ class _PomodoroScreenState extends State<PomodoroScreen>
 
     _initializeAsync();
     FlutterForegroundTask.addTaskDataCallback(_onData);
-    _loadStats();
+    _loadSelectedDuration();
+  }
+
+  Future<void> _loadSelectedDuration() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedDuration = prefs.getInt('selected_duration') ?? 25;
+    if (mounted) {
+      setState(() {
+        _selectedDuration = savedDuration;
+        _durationLoaded = true;
+
+        // Si el servicio no está activo, asegurar que el remaining coincida con la duración seleccionada
+        if (!_isServiceRunning) {
+          _remaining = _selectedDuration * 60;
+        }
+      });
+    }
   }
 
   Future<void> _initializeAsync() async {
@@ -112,6 +136,12 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   void _onData(Object data) {
     if (!mounted) return;
 
+    // Ignorar datos del background task si estamos en proceso de reset
+    if (_isResetting) {
+      print('🔄 Ignorando datos del background task durante reset');
+      return;
+    }
+
     if (data is Map) {
       if (data.containsKey("remaining")) {
         print(
@@ -125,10 +155,6 @@ class _PomodoroScreenState extends State<PomodoroScreen>
           data["action"] == "serviceStopped") {
         // El servicio se ha detenido
         _updateState(_remaining, false, false);
-      } else if (data["action"] == "pomodoroStats" && data["stats"] != null) {
-        setState(() {
-          _stats = PomodoroStats.fromJson(data["stats"]);
-        });
       }
     }
   }
@@ -139,6 +165,99 @@ class _PomodoroScreenState extends State<PomodoroScreen>
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _saveSelectedDuration() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('selected_duration', _selectedDuration);
+  }
+
+  Future<void> _selectDuration(int duration) async {
+    if (_selectedDuration == duration) return;
+
+    // No permitir cambiar duración si el servicio está activo (corriendo o pausado)
+    if (_isServiceRunning) {
+      print('⚠️ No se puede cambiar duración mientras el servicio está activo');
+      return;
+    }
+
+    print('⏰ Cambiando duración de $_selectedDuration a $duration minutos');
+
+    setState(() {
+      _selectedDuration = duration;
+    });
+
+    await _saveSelectedDuration();
+
+    // Si el servicio está corriendo, detenerlo y reiniciar con la nueva duración
+    if (_isServiceRunning) {
+      print('🔄 Deteniendo servicio para cambiar duración...');
+      await FlutterForegroundTask.stopService();
+
+      // Esperar un poco para que el servicio se detenga completamente
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Reiniciar con la nueva duración
+      await _startServiceWithDuration(duration * 60);
+    } else {
+      // Si no está corriendo, solo actualizar el tiempo restante
+      setState(() {
+        _remaining = duration * 60;
+      });
+      widget.onStateChanged(_remaining, _isRunning, _isServiceRunning);
+    }
+  }
+
+  Future<void> _startServiceWithDuration(int durationInSeconds) async {
+    print(
+      '🚀 Iniciando servicio con duración: ${durationInSeconds ~/ 60} minutos',
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('remaining', durationInSeconds);
+    await prefs.setBool('isRunning', true);
+
+    await FlutterForegroundTask.startService(
+      serviceId: 256,
+      notificationTitle: '🧠 StudyFlow - Pomodoro Activo',
+      notificationText: '⏳ Restan: ${formatTime(durationInSeconds)}',
+      notificationIcon: const NotificationIcon(
+        metaDataName: 'com.example.studyflow_app.service.HEART_ICON',
+      ),
+      notificationButtons: [
+        const NotificationButton(id: 'pause_resume', text: 'Pausar'),
+      ],
+      callback: startCallback,
+    );
+
+    // Esperar a que el servicio realmente esté activo
+    bool started = false;
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 150));
+      started = await FlutterForegroundTask.isRunningService;
+      if (started) break;
+    }
+
+    if (!mounted) return;
+
+    if (started) {
+      print('✅ Servicio iniciado correctamente con nueva duración');
+      // Enviar el estado inicial al background task
+      FlutterForegroundTask.sendDataToTask({
+        "action": "start",
+        "remaining": durationInSeconds,
+        "isRunning": true,
+      });
+      setState(() {
+        _remaining = durationInSeconds;
+        _isRunning = true;
+        _isServiceRunning = true;
+      });
+      widget.onStateChanged(_remaining, _isRunning, _isServiceRunning);
+    } else {
+      print('❌ No se pudo iniciar el servicio');
+      _updateState(_remaining, false, false);
+    }
+  }
+
   Future<void> _toggle() async {
     print(
       '🔄 Botón toggle presionado - Estado actual: ${_isRunning ? "Corriendo" : "Pausado"}, Servicio: ${_isServiceRunning ? "Activo" : "Inactivo"}',
@@ -146,49 +265,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
 
     if (!_isServiceRunning) {
       print('🚀 Iniciando servicio de background task...');
-
-      // Guardar el estado inicial antes de iniciar el servicio
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('remaining', _remaining);
-      await prefs.setBool('isRunning', true);
-
-      await FlutterForegroundTask.startService(
-        serviceId: 256,
-        notificationTitle: '🧠 StudyFlow - Pomodoro Activo',
-        notificationText: '⏳ Restan: ${formatTime(_remaining)}',
-        notificationIcon: const NotificationIcon(
-          metaDataName: 'com.example.studyflow_app.service.HEART_ICON',
-        ),
-        notificationButtons: [
-          const NotificationButton(id: 'pause_resume', text: 'Pausar'),
-        ],
-        callback: startCallback,
-      );
-
-      // Esperar a que el servicio realmente esté activo
-      bool started = false;
-      for (int i = 0; i < 10; i++) {
-        await Future.delayed(const Duration(milliseconds: 150));
-        started = await FlutterForegroundTask.isRunningService;
-        if (started) break;
-      }
-      if (!mounted) return;
-      if (started) {
-        print('✅ Servicio iniciado correctamente');
-        // Enviar el estado inicial al background task
-        FlutterForegroundTask.sendDataToTask({
-          "action": "start",
-          "remaining": _remaining,
-          "isRunning": true,
-        });
-        // NO actualizar la UI aquí, esperar a que el background task confirme
-        setState(() {
-          _isServiceRunning = true;
-        });
-      } else {
-        print('❌ No se pudo iniciar el servicio');
-        _updateState(_remaining, false, false);
-      }
+      await _startServiceWithDuration(_selectedDuration * 60);
     } else {
       if (_isRunning) {
         // Si está corriendo, pausar
@@ -207,74 +284,77 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   }
 
   Future<void> _reset() async {
-    print('🛑 Botón reset presionado - Estado actual: ${_isRunning ? "Corriendo" : "Pausado"}, Servicio: ${_isServiceRunning ? "Activo" : "Inactivo"}');
-    
+    print(
+      '🛑 Botón reset presionado - Estado actual: ${_isRunning ? "Corriendo" : "Pausado"}, Servicio: ${_isServiceRunning ? "Activo" : "Inactivo"}',
+    );
+
+    // Activar bandera de reset
+    _isResetting = true;
+
+    // Detener el servicio primero si está activo
     if (_isServiceRunning) {
       print('🔄 Enviando acción RESET al background task...');
       FlutterForegroundTask.sendDataToTask({"action": "reset"});
-      
+
       // Esperar un poco para que el background task procese el reset
-      await Future.delayed(const Duration(milliseconds: 200));
-      
+      await Future.delayed(const Duration(milliseconds: 300));
+
       print('🛑 Deteniendo servicio de background task...');
       await FlutterForegroundTask.stopService();
       print('✅ Servicio detenido correctamente');
+
+      // Verificar que el servicio realmente se detuvo
+      bool serviceStopped = false;
+      for (int i = 0; i < 5; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        serviceStopped = !(await FlutterForegroundTask.isRunningService);
+        if (serviceStopped) break;
+      }
+
+      if (!serviceStopped) {
+        print(
+          '⚠️ El servicio no se detuvo correctamente, forzando detención...',
+        );
+        await FlutterForegroundTask.stopService();
+      }
     }
 
+    // Actualizar SharedPreferences
+    final newRemaining = _selectedDuration * 60;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('remaining', 25 * 60);
+    await prefs.setInt('remaining', newRemaining);
     await prefs.setBool('isRunning', false);
     print('💾 Estado reseteado en SharedPreferences');
 
+    // Actualizar la UI después de asegurar que el servicio está detenido
     if (!mounted) return;
-    
-    // Actualizar la UI inmediatamente
+
     setState(() {
-      _remaining = 25 * 60;
+      _remaining = newRemaining;
       _isRunning = false;
       _isServiceRunning = false;
     });
-    
-    print('✅ UI reseteada a 25:00 - Estado: Pausado, Servicio: Inactivo');
-    
+
     // Notificar el cambio de estado
-    widget.onStateChanged(_remaining, _isRunning, _isServiceRunning);
-  }
+    widget.onStateChanged(newRemaining, false, false);
 
-  Future<void> _loadStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    final statsJson = prefs.getString('pomodoro_stats');
-    setState(() {
-      if (statsJson != null) {
-        _stats = PomodoroStats.fromJson(statsJson);
-      } else {
-        _stats = PomodoroStats(dailySeconds: {});
-      }
-    });
-  }
+    // Desactivar bandera de reset después de un pequeño delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    _isResetting = false;
 
-  Future<void> _debugPrintStats() async {
-    // Pedir los stats actuales al background
-    FlutterForegroundTask.sendDataToTask({"action": "getStats"});
-    // Esperar un poco a que lleguen los datos
-    await Future.delayed(const Duration(milliseconds: 120));
-    final last7 = _stats?.getLast7Days() ?? {};
-    final dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    print('⏱️ Pomodoro stats últimos 7 días:');
-    last7.forEach((k, v) {
-      final date = DateTime.tryParse(k);
-      String weekday = '';
-      if (date != null) {
-        weekday = dias[(date.weekday - 1) % 7];
-      }
-      print('  $k ($weekday): ${v ~/ 60} min (${v}s)');
-    });
-    print('Hoy es: ${DateTime.now()} (weekday: ${dias[(DateTime.now().weekday - 1) % 7]})');
+    print(
+      '✅ UI reseteada a ${_selectedDuration}:00 - Estado: Pausado, Servicio: Inactivo',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final targetProgress = 1.0 - (_remaining / (25 * 60));
+    // Calcular el progreso solo si el servicio está activo y hay tiempo transcurrido
+    double targetProgress = 0.0;
+    if (_isServiceRunning && _remaining < (_selectedDuration * 60)) {
+      targetProgress = 1.0 - (_remaining / (_selectedDuration * 60));
+    }
+
     final screenWidth = MediaQuery.of(context).size.width;
     final circleSize = screenWidth * 0.7;
 
@@ -300,49 +380,6 @@ class _PomodoroScreenState extends State<PomodoroScreen>
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
-                // Indicador del estado del servicio
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        _isServiceRunning
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _isServiceRunning ? Colors.green : Colors.red,
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _isServiceRunning ? Colors.green : Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _isServiceRunning
-                            ? 'Servicio Activo'
-                            : 'Servicio Inactivo',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _isServiceRunning ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
                 IconButton(
                   onPressed: () {},
                   icon: SvgPicture.asset(
@@ -391,67 +428,124 @@ class _PomodoroScreenState extends State<PomodoroScreen>
             ),
           ),
 
-          // Circular Timer
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedBuilder(
-                    animation: _progressAnimationController,
-                    builder: (context, child) {
-                      return CustomPaint(
-                        size: Size(circleSize, circleSize),
-                        painter: _AnimatedCirclePainter(
-                          progress: targetProgress,
-                          rotation: _progressAnimationController.value,
-                        ),
-                        child: SizedBox(
-                          width: circleSize,
-                          height: circleSize,
-                          child: Center(
-                            child: Text(
-                              formatTime(_remaining),
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
+          // Botones de selección de duración
+          if (_durationLoaded)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              height: 100, // Aumentado para que se vea el texto correctamente
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children:
+                      _availableDurations.map((duration) {
+                        final isSelected = _selectedDuration == duration;
+                        final isDisabled = _isServiceRunning;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: GestureDetector(
+                            onTap:
+                                isDisabled
+                                    ? null
+                                    : () => _selectDuration(duration),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    isSelected
+                                        ? Colors.lightBlue
+                                        : isDisabled
+                                        ? Colors.grey.withOpacity(0.05)
+                                        : Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                  color:
+                                      isSelected
+                                          ? Colors.lightBlue
+                                          : isDisabled
+                                          ? Colors.grey.withOpacity(0.2)
+                                          : Colors.grey.withOpacity(0.3),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Text(
+                                '${duration}min',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      isSelected
+                                          ? Colors.white
+                                          : isDisabled
+                                          ? Colors.grey[400]
+                                          : Colors.grey[700],
+                                ),
                               ),
                             ),
                           ),
+                        );
+                      }).toList(),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // Circular Timer
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedBuilder(
+                animation: _progressAnimationController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    size: Size(circleSize, circleSize),
+                    painter: _AnimatedCirclePainter(
+                      progress: targetProgress,
+                      rotation: _progressAnimationController.value,
+                    ),
+                    child: SizedBox(
+                      width: circleSize,
+                      height: circleSize,
+                      child: Center(
+                        child: Text(
+                          formatTime(_remaining),
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildControlButton(
+                    icon:
+                        _isRunning
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                    color: Colors.lightBlue,
+                    onPressed: _toggle,
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildControlButton(
-                        icon:
-                            _isRunning
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                        color: Colors.lightBlue,
-                        onPressed: _toggle,
-                      ),
-                      const SizedBox(width: 20),
-                      _buildControlButton(
-                        icon: Icons.stop_rounded,
-                        color: Colors.redAccent,
-                        onPressed: _reset,
-                      ),
-                      const SizedBox(width: 20),
-                      // Botón de debug para imprimir stats
-                      _buildControlButton(
-                        icon: Icons.bug_report,
-                        color: Colors.deepPurple,
-                        onPressed: _debugPrintStats,
-                      ),
-                    ],
+                  const SizedBox(width: 20),
+                  _buildControlButton(
+                    icon: Icons.stop_rounded,
+                    color: Colors.redAccent,
+                    onPressed: _reset,
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ],
       ),
